@@ -55,6 +55,7 @@ class MediaStreamHandler {
   constructor(connection) {
     this.metaData = null;
     this.trackHandlers = {};
+    this.connection = connection
     connection.on('message', this.processMessage.bind(this));
     connection.on('close', this.close.bind(this));
   }
@@ -62,6 +63,8 @@ class MediaStreamHandler {
   processMessage(message){
     if (message.type === 'utf8') {
       const data = JSON.parse(message.utf8Data);
+      const streamSid = data.streamSid
+
       if (data.event === "start") {
         this.metaData = data.start;
       }
@@ -73,7 +76,18 @@ class MediaStreamHandler {
         const service = new TranscriptionService();
         service.on('transcription', (transcription) => {
           log(`Transcription (${track}): ${transcription}`);
-        });
+
+          // send echo
+          this.connection.sendUTF(JSON.stringify({
+            streamSid,
+            event: "media",
+            media: {
+              track: 'outbound',
+              payload: data.media.payload
+            }
+          }))
+        })
+
         this.trackHandlers[track] = service;
       }
       this.trackHandlers[track].send(data.media.payload);

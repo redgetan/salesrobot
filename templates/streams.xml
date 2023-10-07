@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Start>
-    <Stream url="wss://modern-walls-kick.loca.lt"></Stream>
+    <Stream url="wss://nice-oranges-start.loca.lt"></Stream>
   </Start>
   <Pause length="40"/>
 </Response>
