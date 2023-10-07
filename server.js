@@ -11,7 +11,7 @@ const TranscriptionService = require('./transcription-service');
 const dispatcher = new HttpDispatcher();
 const wsserver = http.createServer(handleRequest);
 
-const HTTP_SERVER_PORT = 8080;
+const HTTP_SERVER_PORT = process.env.WEBSERVER_PORT;
 
 function log(message, ...args) {
   console.log(new Date(), message, ...args);
