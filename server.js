@@ -31,6 +31,21 @@ function handleRequest(request, response){
   }
 }
 
+dispatcher.onGet('/', function(req,res) {
+  log('index');
+  try {
+    res.writeHead(200, {
+      'Content-Type': 'text/plain'
+    });
+
+    res.end('hello world');
+  } catch(e) {
+    console.error(e);
+    res.writeHead(500);
+    res.end();
+  }
+});
+
 dispatcher.onGet('/ping', function(req,res) {
   log('ping');
   try {
