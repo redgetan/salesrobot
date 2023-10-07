@@ -1,7 +1,8 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <Response>
-  <Start>
-    <Stream url="wss://nice-oranges-start.loca.lt"></Stream>
-  </Start>
-  <Pause length="40"/>
+  <Connect>
+    <Stream url="wss://breezy-geese-burn.loca.lt/streams">
+      <Parameter name="aCutomParameter" value="aCustomValue that was set in TwiML" />
+    </Stream>
+  </Connect>
 </Response>

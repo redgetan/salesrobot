@@ -17,7 +17,7 @@
   },
   "homepage": "",
   "dependencies": {
-    "@google-cloud/speech": "^1.5.0",
+    "@google-cloud/speech": "^6.0.2",
     "dotenv": "^4.0.0",
     "httpdispatcher": "^2.1.2",
     "node-record-lpcm16": "^1.0.1",
