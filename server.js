@@ -31,6 +31,21 @@ function handleRequest(request, response){
   }
 }
 
+dispatcher.onGet('/ping', function(req,res) {
+  log('ping');
+  try {
+    res.writeHead(200, {
+      'Content-Type': 'text/plain'
+    });
+
+    res.end('pong');
+  } catch(e) {
+    console.error(e);
+    res.writeHead(500);
+    res.end();
+  }
+});
+
 dispatcher.onPost('/twiml', function(req,res) {
   log('POST TwiML');
   try {
