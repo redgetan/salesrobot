@@ -1,7 +1,14 @@
 const EventEmitter = require('events');
 const Speech = require('@google-cloud/speech');
-const speech = new Speech.SpeechClient();
 const uuid = require('uuid')
+
+
+const encodedKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+const serviceAccountKey = JSON.parse(atob(encodedKey));
+
+const speech = new Speech.SpeechClient({
+  credentials: serviceAccountKey,
+});
 
 class TranscriptionService extends EventEmitter {
   constructor() {

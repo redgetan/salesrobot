@@ -33,17 +33,22 @@ function handleRequest(request, response){
 
 dispatcher.onPost('/twiml', function(req,res) {
   log('POST TwiML');
+  try {
+    var filePath = path.join(__dirname+'/templates', 'streams.xml');
+    var stat = fs.statSync(filePath);
 
-  var filePath = path.join(__dirname+'/templates', 'streams.xml');
-  var stat = fs.statSync(filePath);
+    res.writeHead(200, {
+      'Content-Type': 'text/xml',
+      'Content-Length': stat.size
+    });
 
-  res.writeHead(200, {
-    'Content-Type': 'text/xml',
-    'Content-Length': stat.size
-  });
-
-  var readStream = fs.createReadStream(filePath);
-  readStream.pipe(res);
+    var readStream = fs.createReadStream(filePath);
+    readStream.pipe(res);
+  } catch(e) {
+    console.error(e);
+    res.writeHead(500);
+    res.end();
+  }
 });
 
 mediaws.on('connect', function(connection) {
@@ -112,7 +117,9 @@ class MediaStreamHandler {
 
   replyWithEcho(message) {
     const messages = [...this.messages] // do copy instead of reference
+    const streamSid = messages[0].streamSid;
     this.messages = []
+
     const messageByteBuffers = messages.map((msg) =>
       Buffer.from(msg.media.payload, "base64")
     );
@@ -139,35 +146,39 @@ class MediaStreamHandler {
   }
 
   processMessage(message){
-    if (message.type === 'utf8') {
-      const data = JSON.parse(message.utf8Data);
-      const streamSid = data.streamSid
+    try {
+      if (message.type === 'utf8') {
+        const data = JSON.parse(message.utf8Data);
 
-      if (data.event === "start") {
-        this.metaData = data.start;
-      }
-      if (data.event !== "media") {
-        return;
-      }
-      const track = data.media.track;
+        if (data.event === "start") {
+          this.metaData = data.start;
+        }
+        if (data.event !== "media") {
+          return;
+        }
+        const track = data.media.track;
 
-      if (data.event === 'media') {
-        this.messages.push(data);
-      }
+        if (data.event === 'media') {
+          this.messages.push(data);
+        }
 
-      if (this.trackHandlers[track] === undefined) {
-        const service = new TranscriptionService();
-        service.on('transcription', (transcription) => {
-          log(`Transcription (${track}): ${transcription}`);
-          
-          this.replyWithEcho()
-        })
+        if (this.trackHandlers[track] === undefined) {
+          const service = new TranscriptionService();
+          service.on('transcription', (transcription) => {
+            log(`Transcription (${track}): ${transcription}`);
+            
+            this.replyWithEcho()
+          })
 
-        this.trackHandlers[track] = service;
+          this.trackHandlers[track] = service;
+        }
+        this.trackHandlers[track].send(data.media.payload);
+      } else if (message.type === 'binary') {
+        log('Media WS: binary message received (not supported)');
       }
-      this.trackHandlers[track].send(data.media.payload);
-    } else if (message.type === 'binary') {
-      log('Media WS: binary message received (not supported)');
+    } catch(e) {
+      console.log("crashed..")
+      console.error(e)
     }
   }
 
