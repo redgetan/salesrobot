@@ -7,15 +7,22 @@ const http = require('http');
 const HttpDispatcher = require('httpdispatcher');
 const WebSocketServer = require('websocket').server;
 const TranscriptionService = require('./transcription-service');
+const DeepgramClient = require('./deepgram_client');
+const TextToSpeech = require('./tts');
 
 const dispatcher = new HttpDispatcher();
 const wsserver = http.createServer(handleRequest);
+const isFileWritten = false
 
 const HTTP_SERVER_PORT = 8080;
 
 function log(message, ...args) {
   console.log(new Date(), message, ...args);
 }
+
+// const deepgramClient = new DeepgramClient()
+
+// let replyStart = 0
 
 const mediaws = new WebSocketServer({
   httpServer: wsserver,
@@ -95,6 +102,15 @@ class MediaStreamHandler {
     this.connection = connection
     this.messages = []
     this.repeatCount = 0
+    this.tts = new TextToSpeech();
+    this.transcriber = new TranscriptionService();
+    this.transcriber.on('transcription', async (transcription) => {
+      log(`Transcription : ${transcription}`);
+      //this.replyWithEcho()
+      const audioBuffer = await this.tts.synthesize(transcription)
+      this.replyWithAudio(audioBuffer)
+    })
+
     connection.on('message', this.processMessage.bind(this));
     connection.on('close', this.close.bind(this));
   }
@@ -139,10 +155,23 @@ class MediaStreamHandler {
     log("To Twilio: Sending mark event", markMessage);
     this.connection.sendUTF(JSON.stringify(markMessage));
     this.repeatCount++;
-    if (this.repeatCount === 5) {
+    if (this.repeatCount === 50) {
       log(`Server: Repeated ${this.repeatCount} times...closing`);
       this.connection.close(1000, "Repeated 5 times");
     }
+  }
+
+  replyWithAudio(audioBuffer) {
+    const payload = audioBuffer.toString("base64");
+    console.log("streamSid: " + this.streamSid)
+
+    this.connection.sendUTF(JSON.stringify({
+      streamSid: this.streamSid,
+      event: "media",
+      media: {
+        payload: payload,
+      }
+    }))
   }
 
   replyWithEcho(message) {
@@ -164,18 +193,19 @@ class MediaStreamHandler {
     }))
 
     // send mark
-    const markMessage = {
-      event: "mark",
-      streamSid,
-      mark: {
-        name: `echo message`,
-      },
-    };
-    log("To Twilio: Sending mark event", markMessage);
-    this.connection.sendUTF(JSON.stringify(markMessage));
+    // const markMessage = {
+    //   event: "mark",
+    //   streamSid,
+    //   mark: {
+    //     name: `echo message`,
+    //   },
+    // };
+    // log("To Twilio: Sending mark event", markMessage);
+    // this.connection.sendUTF(JSON.stringify(markMessage));
   }
 
-  processMessage(message){
+
+  async processMessage(message){
     try {
       if (message.type === 'utf8') {
         const data = JSON.parse(message.utf8Data);
@@ -189,20 +219,38 @@ class MediaStreamHandler {
         const track = data.media.track;
 
         if (data.event === 'media') {
-          this.messages.push(data);
+          if (this.streamSid !== data.streamSid) {
+            this.streamSid = data.streamSid
+            console.log("streamSid is " + this.streamSid)
+          }
+          // if (replyStart > 0) {
+          //   const now = Date.now()
+          //   const diff = now - replyStart
+          //   log(`Echo Reply took ${diff}ms`)
+          //   replyStart = 0
+          // }
+
+          // this.messages.push(data);
+
+          // if (this.messages.length >= REPEAT_THRESHOLD) {
+          //   log(`From Twilio: ${this.messages.length} omitted media messages`);
+          //   replyStart = Date.now()
+
+          //   // const messageByteBuffers = this.messages.map((msg) =>
+          //   //   Buffer.from(msg.media.payload, "base64")
+          //   // );
+          //   // // Combine all the bytes, and then base64 encode the entire payload.
+          //   // const audioBuffer = Buffer.concat(messageByteBuffers)
+
+          //   // const transcription = await deepgramClient.transcribe(audioBuffer)
+          //   // console.log("transcription", transcription)
+
+            // this.replyWithEcho();
+          // }
+
+          this.transcriber.send(data.media.payload);
         }
 
-        if (this.trackHandlers[track] === undefined) {
-          const service = new TranscriptionService();
-          service.on('transcription', (transcription) => {
-            log(`Transcription (${track}): ${transcription}`);
-            
-            this.replyWithEcho()
-          })
-
-          this.trackHandlers[track] = service;
-        }
-        this.trackHandlers[track].send(data.media.payload);
       } else if (message.type === 'binary') {
         log('Media WS: binary message received (not supported)');
       }
