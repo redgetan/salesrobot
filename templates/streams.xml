@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Response>
   <Connect>
-    <Stream url="wss://salesrobot.gptforge.net:8080/streams">
+    <Stream url="wss://salesrobot.gptforge.net/streams">
       <Parameter name="aCutomParameter" value="aCustomValue that was set in TwiML" />
     </Stream>
   </Connect>
