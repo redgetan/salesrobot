@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Response>
   <Connect>
-    <Stream url="wss://pink-parts-run.loca.lt/streams">
+    <Stream url="wss://major-carpets-win.loca.lt/streams">
       <Parameter name="aCutomParameter" value="aCustomValue that was set in TwiML" />
     </Stream>
   </Connect>

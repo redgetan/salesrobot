@@ -6,14 +6,24 @@ const logger = require("./logger")
 
 class MediaStreamHandler {
   constructor(connection) {
+    this.connection = connection
+
     this.metaData = null;
     this.trackHandlers = {};
-    this.connection = connection
     this.messages = []
     this.repeatCount = 0
-    this.tts = new TextToSpeech();
     this.history = []
+
+    this.tts = new TextToSpeech();
     this.llmAgent = new LLMAgent()
+
+    this.connection.on('message', this.processMessage.bind(this));
+    this.connection.on('close', this.close.bind(this));
+
+    this.initTranscriber()
+  }
+
+  initTranscriber() {
     this.transcriber = new TranscriptionService();
     this.transcriber.on('transcription', async (transcription) => {
       logger.info(`Transcription : ${transcription}`);
@@ -27,9 +37,6 @@ class MediaStreamHandler {
       const audioBuffer = await this.tts.synthesize(reply)
       this.replyWithAudio(audioBuffer)
     })
-
-    connection.on('message', this.processMessage.bind(this));
-    connection.on('close', this.close.bind(this));
   }
 
   async getChatGPTReply(message) {
