@@ -22,6 +22,7 @@
     "dotenv": "^4.0.0",
     "httpdispatcher": "^2.1.2",
     "langchain": "^0.0.163",
+    "mp3-to-wav": "^0.1.11",
     "msedge-tts": "^1.2.1",
     "node-record-lpcm16": "^1.0.1",
     "openai": "^4.11.1",

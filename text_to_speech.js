@@ -1,3 +1,7 @@
+const childProcess = require('child_process');
+const path = require('path')
+
+
 const textToSpeech = require('@google-cloud/text-to-speech');
 const fs = require('fs');
 const util = require('util');
@@ -36,12 +40,12 @@ class TextToSpeech {
     //const outputFormat = 'pcm_16000'
 
     const streamingLatencyOption = 2 // strong latency optimizations (about 75% of possible latency improvement
-    const path = `/v1/text-to-speech/${voiceId}?optimize_streaming_latency=${streamingLatencyOption}&output_format=${outputFormat}`
+    const apiPath = `/v1/text-to-speech/${voiceId}?optimize_streaming_latency=${streamingLatencyOption}&output_format=${outputFormat}`
 
     const apiKey = process.env.ELEVENLABS_API_KEY
 
-    const startTime = Date.now()
-    const response = await axios.post(baseUrl + path, {
+    let startTime = Date.now()
+    const response = await axios.post(baseUrl + apiPath, {
       text: text,
       model_id: "eleven_monolingual_v1",
       voice_settings: {
@@ -59,20 +63,28 @@ class TextToSpeech {
       responseType: "arraybuffer",
     })
 
+    // response.data is an mp3 ArrayBuffer. convert it into wav
 
-
-    // const writeStream = fs.createWriteStream('output.mp3')
-    // response.data.pipe(writeStream);
-
-    const duration = Date.now() - startTime
+    let duration = Date.now() - startTime
     logger.info("elevenlabs took " + duration + "ms")
 
+    startTime = Date.now()
     await this.saveAudio(response.data)
-    // const wav = new WaveFile();
-    // wav.fromBuffer(response.data);
-    // wav.toSampleRate(8000);
-    // wav.toMuLaw();
-    // return Buffer.from(wav.data.samples)
+    const inputPath = path.join(__dirname, 'output.mp3')
+    const outputPath = path.join(__dirname, 'output.wav')
+    childProcess.execSync(`ffmpeg -y -i ${inputPath} ${outputPath}`)
+    duration = Date.now() - startTime
+    logger.info("mp3 to wav took " + duration + "ms")
+
+    const wavAudioBuffer = fs.readFileSync('output.wav')
+    const wav = new WaveFile();
+    wav.fromBuffer(wavAudioBuffer);
+    wav.toSampleRate(8000);
+    wav.toMuLaw();
+
+    const newBuffer = Buffer.from(wav.data.samples)
+    
+    return newBuffer
   }
 
   async googleTTS(text) {
