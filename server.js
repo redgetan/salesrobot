@@ -10,6 +10,9 @@ const WebSocketServer = require('websocket').server;
 const TranscriptionService = require('./transcription-service');
 const DeepgramClient = require('./deepgram_client');
 const TextToSpeech = require('./tts');
+const { OpenAI } = require("langchain/llms/openai")
+const { BufferMemory } = require("langchain/memory")
+const { ConversationChain } = require("langchain/chains")
 
 const dispatcher = new HttpDispatcher();
 const wsserver = http.createServer(handleRequest);
