@@ -1,5 +1,5 @@
-const TranscriptionService = require('./transcription-service');
-const TextToSpeech = require('./tts');
+const TranscriptionService = require('./transcription_service');
+const TextToSpeech = require('./text_to_speech');
 const LLMAgent = require('./llm_agent');
 
 const logger = require("./logger")

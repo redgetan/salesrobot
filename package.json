@@ -12,14 +12,12 @@
   },
   "author": "",
   "license": "MIT",
-  "bugs": {
-    "url": ""
-  },
   "homepage": "",
   "dependencies": {
     "@deepgram/sdk": "^2.4.0",
     "@google-cloud/speech": "^6.0.2",
     "@google-cloud/text-to-speech": "^5.0.1",
+    "axios": "^1.5.1",
     "cross-fetch": "^4.0.0",
     "dotenv": "^4.0.0",
     "httpdispatcher": "^2.1.2",
@@ -27,6 +25,7 @@
     "msedge-tts": "^1.2.1",
     "node-record-lpcm16": "^1.0.1",
     "openai": "^4.11.1",
+    "pcm-util": "^3.0.0",
     "pino": "^8.15.7",
     "pino-pretty": "^10.2.3",
     "wav": "^1.0.2",

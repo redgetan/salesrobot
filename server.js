@@ -15,83 +15,92 @@ const logger = pino({
 const HttpDispatcher = require('httpdispatcher');
 const WebSocketServer = require('websocket').server;
 const MediaStreamHandler = require('./media_stream_handler')
+const TextToSpeech = require('./text_to_speech')
 
+const run = async () => {
+  const tts = new TextToSpeech()
+  const response = await tts.synthesize("how are you")
 
-const dispatcher = new HttpDispatcher();
-const wsserver = http.createServer(handleRequest);
-const isFileWritten = false
-
-const HTTP_SERVER_PORT = 8080;
-
-const mediaws = new WebSocketServer({
-  httpServer: wsserver,
-  autoAcceptConnections: true,
-});
-
-
-function handleRequest(request, response){
-  try {
-    dispatcher.dispatch(request, response);
-  } catch(err) {
-    console.error(err);
-  }
 }
 
-dispatcher.onGet('/', function(req,res) {
-  logger.info('index');
-  try {
-    res.writeHead(200, {
-      'Content-Type': 'text/plain'
-    });
+run()
 
-    res.end('hello world');
-  } catch(e) {
-    console.error(e);
-    res.writeHead(500);
-    res.end();
-  }
-});
 
-dispatcher.onGet('/ping', function(req,res) {
-  logger.info('ping');
-  try {
-    res.writeHead(200, {
-      'Content-Type': 'text/plain'
-    });
+// const dispatcher = new HttpDispatcher();
+// const wsserver = http.createServer(handleRequest);
+// const isFileWritten = false
 
-    res.end('pong');
-  } catch(e) {
-    console.error(e);
-    res.writeHead(500);
-    res.end();
-  }
-});
+// const HTTP_SERVER_PORT = 8080;
 
-dispatcher.onPost('/twiml', function(req,res) {
-  logger.info('POST TwiML');
-  try {
-    var filePath = path.join(__dirname+'/templates', 'streams.xml');
-    var stat = fs.statSync(filePath);
+// const mediaws = new WebSocketServer({
+//   httpServer: wsserver,
+//   autoAcceptConnections: true,
+// });
 
-    res.writeHead(200, {
-      'Content-Type': 'text/xml',
-      'Content-Length': stat.size
-    });
 
-    var readStream = fs.createReadStream(filePath);
-    readStream.pipe(res);
-  } catch(e) {
-    console.error(e);
-    res.writeHead(500);
-    res.end();
-  }
-});
+// function handleRequest(request, response){
+//   try {
+//     dispatcher.dispatch(request, response);
+//   } catch(err) {
+//     console.error(err);
+//   }
+// }
 
-mediaws.on('connect', function(connection) {
-  logger.info('Media WS: Connection accepted');
-  new MediaStreamHandler(connection);
-});
+// dispatcher.onGet('/', function(req,res) {
+//   logger.info('index');
+//   try {
+//     res.writeHead(200, {
+//       'Content-Type': 'text/plain'
+//     });
 
-wsserver.listen(HTTP_SERVER_PORT, function(){
-  logger.info("Server listening on: http://localhost:%s", HTTP_SERVER_PORT);
-});
+//     res.end('hello world');
+//   } catch(e) {
+//     console.error(e);
+//     res.writeHead(500);
+//     res.end();
+//   }
+// });
+
+// dispatcher.onGet('/ping', function(req,res) {
+//   logger.info('ping');
+//   try {
+//     res.writeHead(200, {
+//       'Content-Type': 'text/plain'
+//     });
+
+//     res.end('pong');
+//   } catch(e) {
+//     console.error(e);
+//     res.writeHead(500);
+//     res.end();
+//   }
+// });
+
+// dispatcher.onPost('/twiml', function(req,res) {
+//   logger.info('POST TwiML');
+//   try {
+//     var filePath = path.join(__dirname+'/templates', 'streams.xml');
+//     var stat = fs.statSync(filePath);
+
+//     res.writeHead(200, {
+//       'Content-Type': 'text/xml',
+//       'Content-Length': stat.size
+//     });
+
+//     var readStream = fs.createReadStream(filePath);
+//     readStream.pipe(res);
+//   } catch(e) {
+//     console.error(e);
+//     res.writeHead(500);
+//     res.end();
+//   }
+// });
+
+// mediaws.on('connect', function(connection) {
+//   logger.info('Media WS: Connection accepted');
+//   new MediaStreamHandler(connection);
+// });
+
+// wsserver.listen(HTTP_SERVER_PORT, function(){
+//   logger.info("Server listening on: http://localhost:%s", HTTP_SERVER_PORT);
+// });
