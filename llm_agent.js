@@ -26,6 +26,11 @@ class LLMAgent {
   }
 
   async getResponse(input) {
+    const response = await this.chain.call({
+      input: input,
+    });
+
+    return response.response.replace(/.*AI:/g,'').trim()
   }
 
   getChatPrompt() {

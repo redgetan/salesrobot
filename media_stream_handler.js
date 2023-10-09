@@ -84,6 +84,7 @@ class MediaStreamHandler {
 
   close(){
     logger.info('Media WS: closed');
+    this.transcriber.close()
   }
 }
 

@@ -1,6 +1,7 @@
 const EventEmitter = require('events');
 const Speech = require('@google-cloud/speech');
 const uuid = require('uuid')
+const logger = require("./logger")
 
 
 const encodedKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
@@ -59,7 +60,7 @@ class TranscriptionService extends EventEmitter {
         .on("error", console.error)
         .on("data", (data) => {
           const duration = Date.now() - this.startTime
-          console.log(`Transcription took: ${duration}ms`)
+          logger.info(`Transcription took: ${duration}ms`)
           const result = data.results[0];
           if (result === undefined || result.alternatives[0] === undefined) {
             return;
