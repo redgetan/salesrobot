@@ -26,11 +26,11 @@ class TextToSpeech {
   async saveAudio(audioBuffer) {
     const writeFile = util.promisify(fs.writeFile);
     await writeFile('output.mp3', audioBuffer, 'binary');
-    console.log('Audio content written to file: output.mp3');
+    //console.log('Audio content written to file: output.mp3');
   }
 
   async synthesize(text) {
-    return this.elevenlabsTTS(text)
+    return this.googleTTS(text)
   }
 
   async elevenlabsTTS(text) {
@@ -39,7 +39,7 @@ class TextToSpeech {
     const outputFormat = 'mp3_44100'
     //const outputFormat = 'pcm_16000'
 
-    const streamingLatencyOption = 2 // strong latency optimizations (about 75% of possible latency improvement
+    const streamingLatencyOption = 3 // strong latency optimizations (about 75% of possible latency improvement
     const apiPath = `/v1/text-to-speech/${voiceId}?optimize_streaming_latency=${streamingLatencyOption}&output_format=${outputFormat}`
 
     const apiKey = process.env.ELEVENLABS_API_KEY
@@ -72,7 +72,7 @@ class TextToSpeech {
     await this.saveAudio(response.data)
     const inputPath = path.join(__dirname, 'output.mp3')
     const outputPath = path.join(__dirname, 'output.wav')
-    childProcess.execSync(`ffmpeg -y -i ${inputPath} ${outputPath}`)
+    childProcess.execSync(`ffmpeg -y -hide_banner -loglevel error -i ${inputPath} ${outputPath}`)
     duration = Date.now() - startTime
     logger.info("mp3 to wav took " + duration + "ms")
 
@@ -96,14 +96,19 @@ class TextToSpeech {
       },
     };
 
+    let startTime = Date.now()
     const result = await this.client.synthesizeSpeech(request);
     const [response] = result
     const audioBuffer = response.audioContent
+
+    let duration = Date.now() - startTime
+    logger.info("googleTTS took " + duration + "ms")
 
     const wav = new WaveFile();
     wav.fromBuffer(audioBuffer);
     wav.toSampleRate(8000);
     wav.toMuLaw();
+
     return Buffer.from(wav.data.samples)
     //this.saveAudio(audioBuffer)
   }
