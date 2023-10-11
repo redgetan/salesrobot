@@ -16,7 +16,7 @@ class MediaStreamHandler {
     this.tts = new TextToSpeech();
     this.llmAgent = new LLMAgent()
 
-    setInterval(this.processAISpeechResponse.bind(this), 300)
+    setInterval(this.processAISpeechResponse.bind(this), 100)
   }
 
   init(connection) {
@@ -58,6 +58,7 @@ class MediaStreamHandler {
       let isEndOfSentence = ['.','?', '!'].indexOf(data.token) !== -1
       if (isEndOfSentence) {
         let sentence = tokens.join('')
+        sentence.replace(/.*AI:/g,'').trim().replace(/.*Assistant:/g,'').trim()
         tokens = []
 
         this.addSentence(sentence)
@@ -80,7 +81,7 @@ class MediaStreamHandler {
 
     Mp3ToMulawConverter.convert(mp3AudioStream, {
       onChunkConverted: (mulawAudioBuffer) => {
-        this.replyWithAudio(audioBuffer)
+        this.replyWithAudio(mulawAudioBuffer)
       },
       onFinished: () => {
         this.isSpeaking = false

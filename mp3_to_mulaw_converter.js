@@ -2,7 +2,7 @@ const fs = require('fs')
 const childProcess = require('child_process')
 
 class Mp3ToMulawConverter {
-  static convert(inputStream, callback) {
+  static convert(inputStream, options = {}) {
     const spawn = childProcess.spawn;
     const ffmpeg = spawn('ffmpeg', [
       '-i', 'pipe:0',     // Input from stdin (pipe:0)
@@ -21,7 +21,7 @@ class Mp3ToMulawConverter {
     ffmpeg.stdout.on('data', (data) => {
       // Do something with the converted audio data, e.g., send it to a stream or a client
       // In this example, we will just log the data
-      callback(data)
+      options.onChunkConverted(data)
       //console.log(`Converted audio data: ${data}`);
     });
   
@@ -36,6 +36,7 @@ class Mp3ToMulawConverter {
     // When the input stream ends, close ffmpeg's stdin
     inputStream.on('end', () => {
       ffmpeg.stdin.end();
+      options.onFinished()
     })
   }
 
