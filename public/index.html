@@ -1,0 +1,52 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0
+Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Sales Call AI</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <style>
+      body {
+        font-size: 32px;
+        text-align: center;
+      }
+      
+      input, button {
+        font-size: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <p>SalesRobot</p>
+    <div class='form'>
+      <input id='phone_input' type='text' placeholder='your phone number' />
+      <button class="call_btn">Call</button>
+    </div>
+
+    <script>
+      document.querySelector(".call_btn").addEventListener("click", makeCall);
+
+      function makeCall() {
+        const phoneNumber = document.getElementById('phone_input').value;
+  
+        fetch(`/call?to=${phoneNumber}`, {
+          method: 'POST',
+        })
+          .then((response) => {
+            if (response.ok) {
+              alert('Call initiated successfully');
+            } else {
+              alert('Call initiation failed');
+            }
+          })
+          .catch((error) => {
+            console.error(error);
+            alert('An error occurred');
+          });
+      }
+    </script>
+  </body>
+</html>

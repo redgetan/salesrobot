@@ -19,21 +19,11 @@ class Mp3ToMulawConverter {
   
     // Handle the output data (converted mu-law audio)
     ffmpeg.stdout.on('data', (data) => {
-      // Do something with the converted audio data, e.g., send it to a stream or a client
-      // In this example, we will just log the data
       options.onChunkConverted(data)
-      //console.log(`Converted audio data: ${data}`);
     });
   
-    // const outputWavStream = fs.createWriteStream('mulaw.wav')
-  
-    // ffmpeg.stdout.pipe(outputWavStream);
-  
-    // Assuming you have a readable stream as inputStream
-    // You can pipe the input stream to ffmpeg's stdin
     inputStream.pipe(ffmpeg.stdin);
   
-    // When the input stream ends, close ffmpeg's stdin
     inputStream.on('end', () => {
       ffmpeg.stdin.end();
       options.onFinished()

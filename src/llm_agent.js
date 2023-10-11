@@ -42,9 +42,6 @@ class LLMAgent {
       ]
     });
 
-    // const duration = Date.now() - startTime
-    // logger.info("chatgpt took " + duration + "ms")
-    // return response.response.replace(/.*AI:/g,'').trim().replace(/.*Assistant:/g,'').trim()
   }
 
   getChatPrompt() {
@@ -57,7 +54,7 @@ class LLMAgent {
     return ChatPromptTemplate.fromMessages([
       [
         "system",
-        defaultSystemMessage,
+        systemMessage,
       ],
       new MessagesPlaceholder("history"),
       ["human", "{input}"],

@@ -6,6 +6,12 @@ const path = require('path');
 const http = require('http');
 const pino = require('pino')
 const { Readable } = require('stream');
+const url = require('url')
+
+const accountSid = process.env.TWILIO_ACCOUNT_SID;
+const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+const client = require('twilio')(accountSid, authToken);
 
 
 const logger = pino({
@@ -41,11 +47,17 @@ function handleRequest(request, response){
 dispatcher.onGet('/', function(req,res) {
   logger.info('index');
   try {
-    res.writeHead(200, {
-      'Content-Type': 'text/plain'
-    });
 
-    res.end('hello world');
+    var filePath = path.join(__dirname, 'index.html');
+    var stat = fs.statSync(filePath);
+
+    res.writeHead(200, {
+      'Content-Type': 'text/html',
+      'Content-Length': stat.size
+    })
+
+    var readStream = fs.createReadStream(filePath);
+    readStream.pipe(res);
   } catch(e) {
     console.error(e);
     res.writeHead(500);
@@ -68,22 +80,26 @@ dispatcher.onGet('/ping', function(req,res) {
   }
 });
 
+dispatcher.onPost('/call', function(req,res) {
+  const parsedUrl = url.parse(req.url, true)
+  const queryParams = parsedUrl.query
+  const destinationNumber = queryParams.to
+
+  console.log("destination: " + destinationNumber)
+
+  client.calls
+  .create({
+    from: process.env.TWILIO_PHONE_NUMBER,
+    to: `+1${destinationNumber}`,
+    url: `https://${process.env.TWILIO_STREAM_URL}/twiml`
+  })
+  .then(call => res.end(call.sid))
+  .catch(error => console.error(error));
+})
+
 dispatcher.onPost('/twiml', function(req,res) {
   logger.info('POST TwiML');
   try {
-
-    var filePath = path.join(__dirname+'/templates', 'streams.xml');
-    var stat = fs.statSync(filePath);
-
-    res.writeHead(200, {
-      'Content-Type': 'text/xml',
-      'Content-Length': stat.size
-    })
-
-    var readStream = fs.createReadStream(filePath);
-    readStream.pipe(res);
-
-    return
 
     let xml = `
       <?xml version="1.0" encoding="UTF-8" ?>
@@ -97,15 +113,22 @@ dispatcher.onPost('/twiml', function(req,res) {
 
     xml = xml.split('\n') // Split the string into lines
     .map(line => line.replace(/^ {6}/, '')) // Remove the first 6 spaces from each line
-    .join('\n');
+    .join('\n').trim();
+
+    var filePath = path.join(__dirname+'/templates', 'streams.xml');
+    fs.writeFileSync(filePath, xml)
+    var stat = fs.statSync(filePath);
 
     res.writeHead(200, {
       'Content-Type': 'text/xml',
-      'Content-Length': xml.length
-    });
+      'Content-Length': stat.size
+    })
 
-    const readableStream = Readable.from(xml)
-    readableStream.pipe(res)
+    var readStream = fs.createReadStream(filePath);
+    readStream.pipe(res);
+
+    // return
+
   } catch(e) {
     console.error(e);
     res.writeHead(500);
