@@ -7,14 +7,16 @@ const logger = require("./logger")
 
 class MediaStreamHandler {
   constructor() {
+    this.isSpeaking = false
     this.metaData = null;
-    this.trackHandlers = {};
+
     this.messages = []
-    this.repeatCount = 0
+    this.sentences = []
 
     this.tts = new TextToSpeech();
     this.llmAgent = new LLMAgent()
 
+    setInterval(this.processAISpeechResponse.bind(this), 300)
   }
 
   init(connection) {
@@ -27,6 +29,7 @@ class MediaStreamHandler {
   }
 
   initTranscriber() {
+    console.log("init transcribe")
     this.transcriber = new TranscriptionService();
     this.transcriber.on('transcription', async (transcription) => {
       logger.info(`Transcription : ${transcription}`);
@@ -34,6 +37,18 @@ class MediaStreamHandler {
       await this.streamChatGPTReply(transcription)
     })
   }
+
+  async processAISpeechResponse() {
+    if (this.isSpeaking) return
+    
+    process.stdout.write('.')
+    let sentence = this.sentences[0]
+    if (sentence) {
+      console.log("speak sentence")
+      await this.speakSentence(sentence)
+    }
+  }
+
 
   async streamChatGPTReply(message) {
     let tokens = []
@@ -43,17 +58,35 @@ class MediaStreamHandler {
       let isEndOfSentence = ['.','?', '!'].indexOf(data.token) !== -1
       if (isEndOfSentence) {
         let sentence = tokens.join('')
-        logger.info(sentence)
         tokens = []
 
-        const mp3AudioStream = await this.tts.elevenlabsTTS(sentence)
-
-        Mp3ToMulawConverter.convert(mp3AudioStream, (audioBuffer) => {
-          this.replyWithAudio(audioBuffer)
-        })
+        this.addSentence(sentence)
       }
     })
+  }
 
+  addSentence(sentence) {
+    logger.info(sentence)
+    this.sentences.push(sentence)
+  }
+
+  moveOnToNextSentence() {
+    this.sentences.shift()
+  }
+
+  async speakSentence(sentence) {
+    this.isSpeaking = true
+    const mp3AudioStream = await this.tts.elevenlabsTTS(sentence)
+
+    Mp3ToMulawConverter.convert(mp3AudioStream, {
+      onChunkConverted: (mulawAudioBuffer) => {
+        this.replyWithAudio(audioBuffer)
+      },
+      onFinished: () => {
+        this.isSpeaking = false
+        this.moveOnToNextSentence()
+      }
+    })
   }
 
   async getChatGPTReply(message, callback) {
