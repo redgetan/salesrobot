@@ -12,6 +12,7 @@ class LLMAgent {
 
   initChain() {
     const model = new OpenAI({
+      streaming: true,
       modelName: "gpt-3.5-turbo",
       openAIApiKey: process.env.OPENAI_API_KEY,
     });
@@ -32,6 +33,13 @@ class LLMAgent {
 
     const response = await this.chain.call({
       input: input,
+      callbacks: [
+        {
+          handleLLMNewToken(token) {
+            console.log({ token });
+          },
+        }
+      ]
     });
 
     const duration = Date.now() - startTime

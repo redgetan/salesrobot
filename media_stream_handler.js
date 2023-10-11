@@ -40,12 +40,7 @@ class MediaStreamHandler {
   }
 
   async getChatGPTReply(message) {
-    const startTime = Date.now()
-
     const response = await this.llmAgent.getResponse(message)
-
-    const duration = Date.now() - startTime
-    logger.info("chatgpt took " + duration + "ms")
 
     return response
   }
