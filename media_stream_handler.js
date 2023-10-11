@@ -1,6 +1,7 @@
 const TranscriptionService = require('./transcription_service');
 const TextToSpeech = require('./text_to_speech');
 const LLMAgent = require('./llm_agent');
+const Mp3ToMulawConverter = require('./mp3_to_mulaw_converter')
 
 const logger = require("./logger")
 
@@ -34,8 +35,12 @@ class MediaStreamHandler {
       this.history.push(reply)
       logger.info(reply)
 
-      const audioBuffer = await this.tts.synthesize(reply)
-      this.replyWithAudio(audioBuffer)
+      const mp3AudioStream = await this.tts.elevenlabsTTS(reply)
+
+      Mp3ToMulawConverter.convert(mp3AudioStream, (audioBuffer) => {
+        this.replyWithAudio(audioBuffer)
+      })
+      //this.replyWithAudio(audioBuffer)
     })
   }
 

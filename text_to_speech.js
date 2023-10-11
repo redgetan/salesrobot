@@ -40,7 +40,7 @@ class TextToSpeech {
     //const outputFormat = 'pcm_16000'
 
     const streamingLatencyOption = 3 // strong latency optimizations (about 75% of possible latency improvement
-    const apiPath = `/v1/text-to-speech/${voiceId}?optimize_streaming_latency=${streamingLatencyOption}&output_format=${outputFormat}`
+    const apiPath = `/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=${streamingLatencyOption}&output_format=${outputFormat}`
 
     const apiKey = process.env.ELEVENLABS_API_KEY
 
@@ -60,7 +60,7 @@ class TextToSpeech {
         'Content-Type': "application/json",
         'Accept': "audio/mpeg",
       },
-      responseType: "arraybuffer",
+      responseType: "stream",
     })
 
     // response.data is an mp3 ArrayBuffer. convert it into wav
@@ -68,23 +68,7 @@ class TextToSpeech {
     let duration = Date.now() - startTime
     logger.info("elevenlabs took " + duration + "ms")
 
-    startTime = Date.now()
-    await this.saveAudio(response.data)
-    const inputPath = path.join(__dirname, 'output.mp3')
-    const outputPath = path.join(__dirname, 'output.wav')
-    childProcess.execSync(`ffmpeg -y -hide_banner -loglevel error -i ${inputPath} ${outputPath}`)
-    duration = Date.now() - startTime
-    logger.info("mp3 to wav took " + duration + "ms")
-
-    const wavAudioBuffer = fs.readFileSync('output.wav')
-    const wav = new WaveFile();
-    wav.fromBuffer(wavAudioBuffer);
-    wav.toSampleRate(8000);
-    wav.toMuLaw();
-
-    const newBuffer = Buffer.from(wav.data.samples)
-    
-    return newBuffer
+    return response.data
   }
 
   async googleTTS(text) {
