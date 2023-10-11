@@ -57,7 +57,7 @@ class LLMAgent {
     return ChatPromptTemplate.fromMessages([
       [
         "system",
-        systemMessage,
+        defaultSystemMessage,
       ],
       new MessagesPlaceholder("history"),
       ["human", "{input}"],

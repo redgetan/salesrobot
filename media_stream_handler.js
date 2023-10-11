@@ -16,7 +16,7 @@ class MediaStreamHandler {
     this.tts = new TextToSpeech();
     this.llmAgent = new LLMAgent()
 
-    setInterval(this.processAISpeechResponse.bind(this), 100)
+    setInterval(this.processAISpeechResponse.bind(this), 200)
   }
 
   init(connection) {
@@ -41,7 +41,6 @@ class MediaStreamHandler {
   async processAISpeechResponse() {
     if (this.isSpeaking) return
     
-    process.stdout.write('.')
     let sentence = this.sentences[0]
     if (sentence) {
       console.log("speak sentence")
@@ -52,13 +51,21 @@ class MediaStreamHandler {
 
   async streamChatGPTReply(message) {
     let tokens = []
+    let startTime = Date.now()
+    let isFirstToken = true
     await this.getChatGPTReply(message, async (data) => {
+      if (isFirstToken) {
+        isFirstToken = false
+        let duration = Date.now() - startTime
+        logger.info("GPT first token took " + duration + "ms")
+      }
+
       tokens.push(data.token)
 
       let isEndOfSentence = ['.','?', '!'].indexOf(data.token) !== -1
       if (isEndOfSentence) {
         let sentence = tokens.join('')
-        sentence.replace(/.*AI:/g,'').trim().replace(/.*Assistant:/g,'').trim()
+        sentence = sentence.replace(/.*AI:/g,'').trim().replace(/.*Assistant:/g,'').trim()
         tokens = []
 
         this.addSentence(sentence)
@@ -77,10 +84,21 @@ class MediaStreamHandler {
 
   async speakSentence(sentence) {
     this.isSpeaking = true
+
+    let startTime = Date.now()
+    let isFirstChunk = true
+
     const mp3AudioStream = await this.tts.elevenlabsTTS(sentence)
 
     Mp3ToMulawConverter.convert(mp3AudioStream, {
       onChunkConverted: (mulawAudioBuffer) => {
+
+        if (isFirstChunk) {
+          isFirstChunk = false
+          let duration = Date.now() - startTime
+          logger.info("ElevenLabs Streaming TTS took " + duration + "ms")
+        }
+
         this.replyWithAudio(mulawAudioBuffer)
       },
       onFinished: () => {
