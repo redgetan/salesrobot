@@ -5,6 +5,8 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const pino = require('pino')
+const { Readable } = require('stream');
+
 
 const logger = pino({
   transport: {
@@ -69,16 +71,41 @@ dispatcher.onGet('/ping', function(req,res) {
 dispatcher.onPost('/twiml', function(req,res) {
   logger.info('POST TwiML');
   try {
+
     var filePath = path.join(__dirname+'/templates', 'streams.xml');
     var stat = fs.statSync(filePath);
 
     res.writeHead(200, {
       'Content-Type': 'text/xml',
       'Content-Length': stat.size
-    });
+    })
 
     var readStream = fs.createReadStream(filePath);
     readStream.pipe(res);
+
+    return
+
+    let xml = `
+      <?xml version="1.0" encoding="UTF-8" ?>
+      <Response>
+        <Connect>
+          <Stream url="wss://${process.env.TWILIO_STREAM_URL}/streams">
+            <Parameter name="aCutomParameter" value="aCustomValue that was set in TwiML" />
+          </Stream>
+        </Connect>
+      </Response>\n`
+
+    xml = xml.split('\n') // Split the string into lines
+    .map(line => line.replace(/^ {6}/, '')) // Remove the first 6 spaces from each line
+    .join('\n');
+
+    res.writeHead(200, {
+      'Content-Type': 'text/xml',
+      'Content-Length': xml.length
+    });
+
+    const readableStream = Readable.from(xml)
+    readableStream.pipe(res)
   } catch(e) {
     console.error(e);
     res.writeHead(500);
@@ -88,7 +115,8 @@ dispatcher.onPost('/twiml', function(req,res) {
 
 mediaws.on('connect', function(connection) {
   logger.info('Media WS: Connection accepted');
-  new MediaStreamHandler(connection);
+  const mediaStreamHandler = new MediaStreamHandler();
+  mediaStreamHandler.init(connection)
 });
 
 wsserver.listen(HTTP_SERVER_PORT, function(){

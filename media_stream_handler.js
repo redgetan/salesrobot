@@ -6,17 +6,19 @@ const Mp3ToMulawConverter = require('./mp3_to_mulaw_converter')
 const logger = require("./logger")
 
 class MediaStreamHandler {
-  constructor(connection) {
-    this.connection = connection
-
+  constructor() {
     this.metaData = null;
     this.trackHandlers = {};
     this.messages = []
     this.repeatCount = 0
-    this.history = []
 
     this.tts = new TextToSpeech();
     this.llmAgent = new LLMAgent()
+
+  }
+
+  init(connection) {
+    this.connection = connection
 
     this.connection.on('message', this.processMessage.bind(this));
     this.connection.on('close', this.close.bind(this));
@@ -28,24 +30,34 @@ class MediaStreamHandler {
     this.transcriber = new TranscriptionService();
     this.transcriber.on('transcription', async (transcription) => {
       logger.info(`Transcription : ${transcription}`);
-      //this.replyWithEcho()
-      this.history.push(transcription)
-      const reply = await this.getChatGPTReply(transcription)
-
-      this.history.push(reply)
-      logger.info(reply)
-
-      const mp3AudioStream = await this.tts.elevenlabsTTS(reply)
-
-      Mp3ToMulawConverter.convert(mp3AudioStream, (audioBuffer) => {
-        this.replyWithAudio(audioBuffer)
-      })
-      //this.replyWithAudio(audioBuffer)
+      
+      await this.streamChatGPTReply(transcription)
     })
   }
 
-  async getChatGPTReply(message) {
-    const response = await this.llmAgent.getResponse(message)
+  async streamChatGPTReply(message) {
+    let tokens = []
+    await this.getChatGPTReply(message, async (data) => {
+      tokens.push(data.token)
+
+      let isEndOfSentence = ['.','?', '!'].indexOf(data.token) !== -1
+      if (isEndOfSentence) {
+        let sentence = tokens.join('')
+        logger.info(sentence)
+        tokens = []
+
+        const mp3AudioStream = await this.tts.elevenlabsTTS(sentence)
+
+        Mp3ToMulawConverter.convert(mp3AudioStream, (audioBuffer) => {
+          this.replyWithAudio(audioBuffer)
+        })
+      }
+    })
+
+  }
+
+  async getChatGPTReply(message, callback) {
+    const response = await this.llmAgent.getResponse(message, callback)
 
     return response
   }

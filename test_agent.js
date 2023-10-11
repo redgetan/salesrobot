@@ -1,14 +1,22 @@
 const LLMAgent = require("./llm_agent")
+const MediaStreamHandler = require("./media_stream_handler")
 
 const logger = require("./logger")
 
-const run = async () => {
+const runGPT = async () => {
   const agent = new LLMAgent()
-  let response = await agent.getResponse("hello how are you?")
-  logger.info(response)
+  await agent.getResponse("hello how are you?", (token) => {
+    console.log(token)
+  })
+}
 
-  response = await agent.getResponse("yes. what do you want?")
-  logger.info(response)
+const runMediaStreamHandler = async () => {
+  const mediaStreamHandler = new MediaStreamHandler();
+  mediaStreamHandler.streamChatGPTReply("hello how are you?")
+}
+
+const run = async () => {
+  runMediaStreamHandler()
 }
 
 run()

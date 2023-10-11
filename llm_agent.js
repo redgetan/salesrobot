@@ -28,7 +28,7 @@ class LLMAgent {
     })
   }
 
-  async getResponse(input) {
+  async getResponse(input, callback) {
     let startTime = Date.now()
 
     const response = await this.chain.call({
@@ -36,15 +36,15 @@ class LLMAgent {
       callbacks: [
         {
           handleLLMNewToken(token) {
-            console.log({ token });
+            callback({ token });
           },
         }
       ]
     });
 
-    const duration = Date.now() - startTime
-    logger.info("chatgpt took " + duration + "ms")
-    return response.response.replace(/.*AI:/g,'').trim().replace(/.*Assistant:/g,'').trim()
+    // const duration = Date.now() - startTime
+    // logger.info("chatgpt took " + duration + "ms")
+    // return response.response.replace(/.*AI:/g,'').trim().replace(/.*Assistant:/g,'').trim()
   }
 
   getChatPrompt() {
