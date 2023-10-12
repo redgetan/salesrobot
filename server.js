@@ -118,7 +118,7 @@ dispatcher.onPost('/twiml', function(req,res) {
 
     xml = xml.split('\n') // Split the string into lines
     .map(line => line.replace(/^ {6}/, '')) // Remove the first 6 spaces from each line
-    .join('\n');
+    .join('\n').trim();
 
     // res.writeHead(200, {
     //   'Content-Type': 'text/xml',
